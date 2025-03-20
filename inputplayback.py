@@ -1,35 +1,36 @@
 #Required to record keyboard
 import keyboard
-# #I believe I need to implement a Listener to be able to break out of the playback
-# from threading import Thread
-#
-# #Listener implementation
-# #Can be found on : https://stackoverflow.com/questions/13180941/how-to-kill-a-while-loop-with-a-keystroke
-# def on_press(key):
-#     try:
-#         print('alphanumeric key {0} pressed'.format(
-#             key.char))
-#     except AttributeError:
-#         print('special key {0} pressed'.format(
-#             key))
-#
-# if __name__ == '__main__':
-#     abortKey = 'ctrl'
-#     listener = keyboard.Listener(on_press=on_press, abortKey=abortKey)
-#     listener.start()  # start to listen on a separate thread
-#
-#     # start thread with loop
-#     Thread(target=input_playback, args=(), name='input_playback', daemon=True).start()
-#
-#     listener.join() # wait for abortKey
+#Required to monitor 'stop key' press during playback
+import threading
 
-#the main function of the program, recording and playing back key sequence
+# Variable to control the loop
+stop_playback = False
+# Function to make CTRL 'stop key' when the next replay ends
+def check_for_stop_key():
+    global stop_playback
+    while not stop_playback:
+        if keyboard.is_pressed('ctrl'):
+            print("CTRL has been pressed, ending program")
+            stop_playback = True
+            break
+
+# Main function of the program, recording and playing back sequence
 def input_playback():
-    events = keyboard.record('shift')
     try:
-        while True:
-            # play these events
-            keyboard.play(events)
+        print("Input the desired sequence now then press Shift to stop recording")
+        # Records the inputs pressed, held, released until Shift is pressed
+        events = keyboard.record('shift')
+        print("Press CTRL to stop the program")
+        # Start a thread to watch the 'stop key'
+        stop_thread = threading.Thread(target=check_for_stop_key, daemon=True)
+        stop_thread.start()
+
+        while not stop_playback:
+            print("Now replaying the input sequence...")
+            # Playback the recording at normal speed
+            keyboard.play(events, speed_factor=1.0)
     except KeyboardInterrupt:
         pass
+
+#Run the function
 input_playback()
